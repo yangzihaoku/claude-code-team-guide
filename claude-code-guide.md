@@ -1,6 +1,6 @@
 # Claude Code 从零开始使用指南
 
-> 蓝瀚互动团队内部教程 | 2026 年 4 月
+> BV 品牌团队内部教程 | 2026 年 4 月
 
 ---
 
@@ -34,22 +34,22 @@
 
 Claude Code 通过公司统一的 API 服务使用，你需要先申请一个 API Key。
 
-**申请文档：** [蓝瀚 AI API 申请指南](https://bluefocus.feishu.cn/docx/A8ozdc5HdoGgooxhTugcp7bHnae?from=from_copylink)
+**申请文档：** [AI API 申请指南](https://bluefocus.feishu.cn/docx/A8ozdc5HdoGgooxhTugcp7bHnae?from=from_copylink)
 
 申请完成后你会得到一个以 `sk-` 开头的密钥字符串，请妥善保管。
 
-### 2. 确认翻墙工具配置
+### 2. 确认科学上网 / VPN 配置
 
-Claude Code 在终端（Terminal）中运行，**普通的系统代理对终端无效**。你需要确保翻墙工具开启了以下模式之一：
+Claude Code 在终端（Terminal）中运行，**普通的系统代理对终端无效**。你需要确保 VPN 工具开启了以下模式之一：
 
-| 翻墙工具 | 需要开启的模式 |
+| VPN 工具 | 需要开启的模式 |
 |---|---|
 | Clash / ClashX | **增强模式（Enhanced Mode）** 或 **TUN 模式** |
 | V2RayU / V2RayN | **虚拟网卡模式** 或手动设置终端代理 |
 | Surge | **增强模式** |
 | Shadowrocket | **全局路由模式** |
 
-> 如果不确定怎么开，先打开 Terminal（终端），输入 `curl google.com`，如果有返回内容说明终端已经可以翻墙。如果超时没反应，说明终端流量没走代理。
+> 如果不确定怎么开，先打开 Terminal（终端），输入 `curl google.com`，如果有返回内容说明终端已经可以正常访问外网。如果超时没反应，说明终端流量没走代理。
 
 ---
 
@@ -80,7 +80,7 @@ curl -fsSL https://raw.githubusercontent.com/yangzihaoku/claude-code-team-guide/
 > ```
 
 脚本会引导你完成：
-1. 检查翻墙工具是否生效
+1. 检查 VPN 是否生效
 2. 检查/安装 Node.js（扩展工具需要）
 3. 创建工作目录
 4. 安装 Claude Code
@@ -150,7 +150,7 @@ claude                  # 启动 Claude Code
 公司的 API 中转不支持 Claude 内置的联网搜索功能，所以你需要单独安装 Brave Search 插件。
 
 **申请 Brave Search API Key：**
-1. 打开 https://brave.com/search/api/ （需要翻墙）
+1. 打开 https://brave.com/search/api/ （需要科学上网）
 2. 点击 **Get Started**
 3. 注册账号
 4. 选择 **Search** 计划（免费额度：每月约 1000 次搜索，足够日常使用）
@@ -235,14 +235,14 @@ lark-cli auth status
 - 确认安装是否成功：`ls ~/.local/bin/claude`
 
 ### Q: 连接超时 / 网络错误？
-- 检查翻墙工具是否开启了增强模式/TUN 模式
+- 检查 VPN 是否开启了增强模式/TUN 模式
 - 在终端测试：`curl -I https://claude.ai`（应该返回 HTTP 200 或 301）
 - 临时方案：在终端设置代理
   ```bash
   export https_proxy=http://127.0.0.1:7890
   export http_proxy=http://127.0.0.1:7890
   ```
-  （端口号 7890 视你的翻墙工具而定，Clash 默认是 7890）
+  （端口号 7890 视你的 VPN 工具而定，Clash 默认是 7890）
 
 ### Q: API 报错 / 请求失败？
 - 确认 `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS` 已设置为 `1`

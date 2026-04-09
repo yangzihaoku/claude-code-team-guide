@@ -2,7 +2,7 @@
 # ============================================================================
 # Claude Code 一键安装配置脚本
 # 适用于 macOS (zsh)
-# 蓝瀚互动团队内部使用
+# BV 品牌团队内部使用
 # ============================================================================
 
 set -e
@@ -38,17 +38,17 @@ fi
 echo -e "${BOLD}${CYAN}"
 echo "  ╔══════════════════════════════════════════════╗"
 echo "  ║     Claude Code 一键安装配置脚本             ║"
-echo "  ║     蓝瀚互动团队                             ║"
+echo "  ║     BV 品牌团队                             ║"
 echo "  ╚══════════════════════════════════════════════╝"
 echo -e "${NC}"
 
 # ============================================================================
-step "0" "检查翻墙工具"
+step "0" "检查科学上网 / VPN"
 # ============================================================================
 
 echo -e "${YELLOW}${BOLD}重要提醒：${NC}"
-echo "  Claude Code 需要翻墙才能正常使用。"
-echo "  请确保你的翻墙工具已开启，并且开启了以下任一模式："
+echo "  Claude Code 需要科学上网才能正常使用。"
+echo "  请确保你的 VPN 工具已开启，并且开启了以下任一模式："
 echo ""
 echo "  Clash:   增强模式 或 TUN 模式"
 echo "  V2Ray:   虚拟网卡 或 系统代理"
@@ -56,7 +56,7 @@ echo "  其他:    确保终端（Terminal）的流量也走代理"
 echo ""
 echo -e "  ${YELLOW}原因：普通的「系统代理」只对浏览器生效，终端不走代理。${NC}"
 echo ""
-read -p "已确认翻墙工具已正确配置？(回车继续) " _dummy
+read -p "已确认 VPN 已正确配置？(回车继续) " _dummy
 
 # 测试连通性
 info "正在测试网络连通性..."
@@ -66,8 +66,8 @@ else
     error "无法连接到 claude.ai"
     echo ""
     echo "  可能的原因："
-    echo "  1. 翻墙工具未开启"
-    echo "  2. 翻墙工具未开启增强模式/TUN 模式"
+    echo "  1. VPN 工具未开启"
+    echo "  2. VPN 未开启增强模式/TUN 模式"
     echo "  3. 终端需要重启以应用代理设置"
     echo ""
     echo "  解决方法："
@@ -79,7 +79,7 @@ else
     read -p "修复后按回车重试，或输入 skip 跳过检查: " choice
     if [[ "$choice" != "skip" ]]; then
         if ! curl -s --connect-timeout 10 --max-time 15 "https://claude.ai" > /dev/null 2>&1; then
-            error "仍然无法连接。请检查翻墙配置后重新运行此脚本。"
+            error "仍然无法连接。请检查 VPN 配置后重新运行此脚本。"
             exit 1
         fi
         success "网络连通正常"
@@ -306,7 +306,7 @@ echo ""
 echo "  需要一个 Brave Search API Key（免费额度：每月 $5 ≈ 1000 次搜索）"
 echo "  申请地址: https://brave.com/search/api/"
 echo "    1. 点击 Get Started"
-echo "    2. 注册账号（需要翻墙）"
+echo "    2. 注册账号（需要科学上网）"
 echo "    3. 选择 Search 计划 → 进入 Dashboard → 复制 API Key"
 echo ""
 
