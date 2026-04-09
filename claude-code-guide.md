@@ -145,68 +145,37 @@ claude                  # 启动 Claude Code
 
 ## 必知技巧
 
-### 1. 联网搜索：安装 Brave Search
+### 1. 遇到问题？直接问 Claude Code
 
-公司的 API 中转不支持 Claude 内置的联网搜索功能，所以你需要单独安装 Brave Search 插件。
+Claude Code 本身就是一个 AI 助手。遇到任何配置、安装、报错的问题，**把错误信息直接粘贴给它，让它帮你解决**。不需要你自己去搜索或排查。
 
-**申请 Brave Search API Key：**
-1. 打开 https://brave.com/search/api/ （需要科学上网）
-2. 点击 **Get Started**
-3. 注册账号
-4. 选择 **Search** 计划（免费额度：每月约 1000 次搜索，足够日常使用）
-5. 进入 Dashboard，复制你的 API Key
+### 2. 让 Claude Code 帮你联网搜索
 
-**配置方式：**
+公司 API 不支持 Claude 内置的搜索功能，但可以通过安装 Brave Search 插件解决。
 
-如果安装脚本里跳过了这步，可以在终端执行：
+你需要先自己去 https://brave.com/search/api/ 注册一个免费账号，拿到 API Key（免费额度每月约 1000 次搜索，够用）。
 
-```bash
-claude mcp add brave-search -s user -e BRAVE_API_KEY=你的Key -- npx -y @brave/brave-search-mcp-server
-```
+拿到 Key 之后，直接在 Claude Code 里说：
 
-配置完成后重启 Claude Code，就可以让它联网搜索了。
+> 帮我配置 Brave Search MCP，我的 API Key 是 xxxxx
 
-### 2. 飞书集成：安装 Lark CLI
+它会自动帮你完成所有配置。
 
-安装 Lark CLI 后，Claude Code 可以直接操作飞书（查日历、发消息、读文档、操作表格等）。
+### 3. 让 Claude Code 连接飞书
 
-详细文档参考：https://github.com/larksuite/cli/blob/main/README.zh.md
+安装飞书 CLI 后，Claude Code 可以帮你查日历、发消息、读文档、操作表格。
 
-**安装 CLI 和 Claude Code 技能包：**
+直接在 Claude Code 里说：
 
-```bash
-npm install -g @larksuite/cli
-npx skills add larksuite/cli -y -g
-```
+> 帮我安装和配置飞书 CLI，参考这个文档 https://github.com/larksuite/cli/blob/main/README.zh.md
 
-第二条命令会把飞书相关的技能（日历、消息、文档、表格等 19 个）安装到 Claude Code 中。
+它会自动安装，过程中会给你一个授权链接，你用浏览器打开、飞书登录授权就行。
 
-**初始化应用配置：**
+### 4. 想安装其他工具？同样的思路
 
-```bash
-lark-cli config init
-```
+以后不管是想装什么新工具、配置什么新功能，思路都一样：**找到官方文档或 GitHub 链接，把链接丢给 Claude Code，让它帮你搞定**。你不需要看懂那些技术文档，Claude Code 能看懂。
 
-按提示操作：选择 `feishu`，输入应用的 App ID 和 App Secret。
-（如果还没有飞书应用，config init 过程会引导你自动创建。）
-
-**登录授权：**
-
-```bash
-lark-cli auth login --recommend
-```
-
-运行后会输出一个授权链接，在浏览器中打开并完成飞书 OAuth 登录。授权成功后命令会自动退出。
-
-**验证登录状态：**
-
-```bash
-lark-cli auth status
-```
-
-看到你的用户名和授权范围就说明配置成功了。
-
-### 3. 常用快捷操作
+### 5. 常用快捷操作
 
 | 操作 | 说明 |
 |---|---|
@@ -214,10 +183,9 @@ lark-cli auth status
 | `Ctrl+D` | 退出 Claude Code |
 | `/help` | 查看帮助信息 |
 | `/status` | 查看当前连接状态和配置 |
-| `/model` | 切换使用的 AI 模型 |
 | `Esc` 连按两次 | 撤销 Claude 刚刚的代码修改 |
 
-### 4. 几个建议
+### 6. 几个建议
 
 - **描述清楚你的需求**：不用写代码，但要说清楚你想要什么结果
 - **提供文件路径**：直接把文件拖进终端窗口，就能自动填入路径
@@ -230,29 +198,10 @@ lark-cli auth status
 ## 常见问题
 
 ### Q: 输入 `claude` 提示 command not found？
-- 新开一个终端窗口再试
-- 或执行 `source ~/.zshrc` 重新加载配置
-- 确认安装是否成功：`ls ~/.local/bin/claude`
+新开一个终端窗口再试。如果还不行，把这个错误信息告诉 Claude Code（先 `source ~/.zshrc` 再输入 `claude`）。
 
 ### Q: 连接超时 / 网络错误？
-- 检查 VPN 是否开启了增强模式/TUN 模式
-- 在终端测试：`curl -I https://claude.ai`（应该返回 HTTP 200 或 301）
-- 临时方案：在终端设置代理
-  ```bash
-  export https_proxy=http://127.0.0.1:7890
-  export http_proxy=http://127.0.0.1:7890
-  ```
-  （端口号 7890 视你的 VPN 工具而定，Clash 默认是 7890）
-
-### Q: API 报错 / 请求失败？
-- 确认 `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS` 已设置为 `1`
-- 在 Claude Code 中输入 `/status` 查看配置是否正确
-- 确认 API Key 没有过期
-
-### Q: Brave Search 不生效？
-- 确认 Node.js 已安装：`node --version`
-- 重启 Claude Code 后再试
-- 检查配置：在 Claude Code 中输入 `/mcp` 查看 MCP 服务器状态
+最常见的原因是 VPN 没有开启增强模式/TUN 模式。先确认 VPN 配置（参考上面的「准备工作」部分），然后重新打开终端再试。
 
 ### Q: 能用来做什么？
 这取决于你的想象力。以下是一些真实使用场景：
