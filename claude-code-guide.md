@@ -86,8 +86,9 @@ curl -fsSL https://raw.githubusercontent.com/yangzihaoku/claude-code-team-guide/
 4. 安装 Claude Code
 5. 配置 API Key 和中转地址
 6. 配置核心设置（禁用不兼容的 beta 功能）
-7. [可选] 配置 Brave Search（联网搜索能力）
-8. [可选] 安装 Lark CLI（飞书集成）
+7. [可选] 安装 Lark CLI（飞书集成）
+
+脚本会自动帮你配置 DuckDuckGo 搜索（免费、无需注册），装完就能让 Claude Code 联网搜索了。
 
 ### Windows 用户
 
@@ -149,17 +150,20 @@ claude                  # 启动 Claude Code
 
 Claude Code 本身就是一个 AI 助手。遇到任何配置、安装、报错的问题，**把错误信息直接粘贴给它，让它帮你解决**。不需要你自己去搜索或排查。
 
-### 2. 让 Claude Code 帮你联网搜索
+### 2. 联网搜索
 
-公司 API 不支持 Claude 内置的搜索功能，但可以通过安装 Brave Search 插件解决。
+安装脚本已经自动配置了 DuckDuckGo 搜索（免费、无需注册），Claude Code 开箱就能帮你搜索网页信息。
 
-你需要先自己去 https://brave.com/search/api/ 注册一个免费账号，拿到 API Key（免费额度每月约 1000 次搜索，够用）。
+如果觉得搜索质量不够好，可以升级到以下服务（都有免费额度，每月约 1000 次）：
+- **Brave Search**：https://brave.com/search/api/
+- **Tavily**：https://tavily.com/ （注册不需要信用卡）
+- **Exa**：https://exa.ai/ （语义搜索，质量最高）
 
-拿到 Key 之后，直接在 Claude Code 里说：
+注册拿到 API Key 后，直接在 Claude Code 里说：
 
-> 帮我配置 Brave Search MCP，我的 API Key 是 xxxxx
+> 帮我配置 Brave Search / Tavily / Exa 搜索，我的 API Key 是 xxxxx
 
-它会自动帮你完成所有配置。
+它会自动帮你完成。
 
 ### 3. 让 Claude Code 连接飞书
 
