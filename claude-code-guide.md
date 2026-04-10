@@ -114,12 +114,13 @@ curl -fsSL https://raw.githubusercontent.com/yangzihaoku/claude-code-team-guide/
 
 ## 开始使用
 
-安装完成后：
+安装完成后，关闭终端重新打开，输入：
 
 ```bash
-cd ~/claudeworkspace    # 进入你的工作目录
-claude                  # 启动 Claude Code
+cc
 ```
+
+就会自动进入工作目录并启动 Claude Code。
 
 首次启动会要求登录：
 1. 选择 **Use an API key**

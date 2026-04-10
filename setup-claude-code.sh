@@ -257,6 +257,9 @@ if [[ -z "$EXISTING_KEY" || "$reconfig" == "y" || "$reconfig" == "Y" ]]; then
 # Claude Code API Configuration
 export ANTHROPIC_API_KEY="$API_KEY"
 export ANTHROPIC_BASE_URL="$RELAY_URL"
+
+# 快捷命令：输入 cc 即可进入工作目录并启动 Claude Code
+alias cc='cd $WORKSPACE && claude'
 EOF
 
     export ANTHROPIC_API_KEY="$API_KEY"
@@ -266,6 +269,18 @@ EOF
 else
     export ANTHROPIC_API_KEY="$EXISTING_KEY"
     export ANTHROPIC_BASE_URL="$RELAY_URL"
+fi
+
+# 补上快捷命令（不管是否重新配置了 Key）
+if ! grep -q "alias cc=" "$SHELL_RC" 2>/dev/null; then
+    cat >> "$SHELL_RC" << EOF
+
+# 快捷命令：输入 cc 即可进入工作目录并启动 Claude Code
+alias cc='cd $WORKSPACE && claude'
+EOF
+    success "已添加快捷命令：输入 cc 即可启动 Claude Code"
+else
+    success "快捷命令 cc 已存在"
 fi
 
 pause
@@ -380,10 +395,11 @@ echo "  ║           全部完成！可以开始使用了             ║"
 echo "  ║                                              ║"
 echo -e "  ╚══════════════════════════════════════════════╝${NC}"
 echo ""
-echo "  接下来：关闭这个终端窗口，重新打开一个，然后执行："
+echo "  接下来：关闭这个终端窗口，重新打开一个，然后输入："
 echo ""
-echo -e "    ${BOLD}${CYAN}cd $WORKSPACE${NC}"
-echo -e "    ${BOLD}${CYAN}claude${NC}"
+echo -e "    ${BOLD}${CYAN}cc${NC}"
+echo ""
+echo "  就会自动进入工作目录并启动 Claude Code。"
 echo ""
 echo "  首次启动时："
 echo "    1. 选择「Use an API key」"
