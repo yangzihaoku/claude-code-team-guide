@@ -17,6 +17,8 @@ BOLD='\033[1m'
 DIM='\033[2m'
 NC='\033[0m'
 
+TOTAL_STEPS=6
+
 info()    { echo -e "${BLUE}[信息]${NC} $1"; }
 success() { echo -e "${GREEN}  ✓ $1${NC}"; }
 warn()    { echo -e "${YELLOW}[注意]${NC} $1"; }
@@ -25,7 +27,7 @@ error()   { echo -e "${RED}[错误]${NC} $1"; }
 step() {
     echo ""
     echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${BOLD}${CYAN}  第 $1 步（共 7 步）：$2${NC}"
+    echo -e "${BOLD}${CYAN}  第 $1 步（共 ${TOTAL_STEPS} 步）：$2${NC}"
     echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
 }
@@ -61,7 +63,7 @@ echo "  ║                                              ║"
 echo "  ╚══════════════════════════════════════════════╝"
 echo -e "${NC}"
 echo "  这个脚本会一步一步帮你完成 Claude Code 的安装和配置。"
-echo "  整个过程大约需要 5-10 分钟，请跟着提示操作。"
+echo "  整个过程大约需要 5 分钟，请跟着提示操作。"
 echo ""
 echo -e "  ${DIM}已经安装过？没关系，脚本会自动跳过已完成的步骤。${NC}"
 echo ""
@@ -114,44 +116,7 @@ fi
 pause
 
 # ============================================================================
-step "2" "检查 Node.js"
-# ============================================================================
-
-echo "  Node.js 是一些扩展工具（飞书集成等）需要的运行环境。"
-echo "  即使没有也不影响 Claude Code 核心功能。"
-echo ""
-
-if command -v node &> /dev/null; then
-    success "Node.js 已安装: $(node --version)"
-else
-    warn "未检测到 Node.js"
-    echo ""
-
-    if command -v brew &> /dev/null; then
-        ask "  是否通过 Homebrew 安装？(y/n): " install_node
-        if [[ "$install_node" == "y" || "$install_node" == "Y" ]]; then
-            info "正在安装 Node.js（可能需要几分钟）..."
-            brew install node
-            success "Node.js 安装完成: $(node --version)"
-        else
-            info "跳过，后续可以再安装"
-        fi
-    else
-        echo "  请手动安装 Node.js："
-        echo "    方式 1: 先装 Homebrew，再 brew install node"
-        echo "    方式 2: 去 https://nodejs.org/zh-cn 下载 LTS 版本"
-        echo ""
-        ask "  安装好后按回车继续，或输入 skip 跳过: " choice
-        if [[ "$choice" != "skip" ]] && ! command -v node &> /dev/null; then
-            warn "未检测到 Node.js，部分扩展功能暂时无法使用"
-        fi
-    fi
-fi
-
-pause
-
-# ============================================================================
-step "3" "创建工作目录"
+step "2" "创建工作目录"
 # ============================================================================
 
 DEFAULT_WORKSPACE="$HOME/claudeworkspace"
@@ -171,7 +136,7 @@ fi
 pause
 
 # ============================================================================
-step "4" "安装 Claude Code"
+step "3" "安装 Claude Code"
 # ============================================================================
 
 if command -v claude &> /dev/null; then
@@ -199,7 +164,6 @@ if [[ "$reinstall" == "y" || "$reinstall" == "Y" ]]; then
         success "Claude Code 安装成功: $(claude --version 2>/dev/null)"
     else
         error "安装似乎未成功，请检查上方的错误信息"
-        echo "  也可以尝试: npm install -g @anthropic-ai/claude-code"
         exit 1
     fi
 fi
@@ -207,7 +171,7 @@ fi
 pause
 
 # ============================================================================
-step "5" "配置 API Key"
+step "4" "配置 API Key"
 # ============================================================================
 
 echo "  Claude Code 通过公司的 API 中转服务使用。"
@@ -257,9 +221,6 @@ if [[ -z "$EXISTING_KEY" || "$reconfig" == "y" || "$reconfig" == "Y" ]]; then
 # Claude Code API Configuration
 export ANTHROPIC_API_KEY="$API_KEY"
 export ANTHROPIC_BASE_URL="$RELAY_URL"
-
-# 快捷命令：输入 cc 即可进入工作目录并启动 Claude Code
-alias cc='cd $WORKSPACE && claude'
 EOF
 
     export ANTHROPIC_API_KEY="$API_KEY"
@@ -271,7 +232,7 @@ else
     export ANTHROPIC_BASE_URL="$RELAY_URL"
 fi
 
-# 补上快捷命令（不管是否重新配置了 Key）
+# 补上快捷命令 cc
 if ! grep -q "alias cc=" "$SHELL_RC" 2>/dev/null; then
     cat >> "$SHELL_RC" << EOF
 
@@ -286,15 +247,15 @@ fi
 pause
 
 # ============================================================================
-step "6" "配置系统设置 + 联网搜索"
+step "5" "自动配置（系统设置 + 联网搜索）"
 # ============================================================================
 
-echo "  正在自动完成两项配置，不需要你操作："
-echo "    1. 禁用不兼容的实验功能（公司 API 需要）"
-echo "    2. 配置 Exa 搜索（让 Claude Code 能联网搜索）"
+echo "  正在自动完成以下配置，不需要你操作："
+echo "    1. 调整系统设置（让公司 API 正常工作）"
+echo "    2. 开启联网搜索（让 Claude Code 能搜索网页信息）"
 echo ""
 
-# --- 6a: settings.json ---
+# --- 5a: settings.json ---
 SETTINGS_DIR="$HOME/.claude"
 SETTINGS_FILE="$SETTINGS_DIR/settings.json"
 mkdir -p "$SETTINGS_DIR"
@@ -302,15 +263,24 @@ mkdir -p "$SETTINGS_DIR"
 if [[ -f "$SETTINGS_FILE" ]] && grep -q "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS" "$SETTINGS_FILE" 2>/dev/null; then
     success "系统设置：已配置"
 else
-    if [[ -f "$SETTINGS_FILE" ]] && command -v node &> /dev/null; then
-        node -e "
-const fs = require('fs');
-const f = '$SETTINGS_FILE';
-const cfg = JSON.parse(fs.readFileSync(f, 'utf8'));
-if (!cfg.env) cfg.env = {};
-cfg.env.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS = '1';
-fs.writeFileSync(f, JSON.stringify(cfg, null, 2) + '\n');
-"
+    if [[ -f "$SETTINGS_FILE" ]]; then
+        # 已有设置文件，用 python（macOS 自带）合并
+        python3 -c "
+import json, sys
+f = '$SETTINGS_FILE'
+with open(f) as fh: cfg = json.load(fh)
+cfg.setdefault('env', {})['CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS'] = '1'
+with open(f, 'w') as fh: json.dump(cfg, fh, indent=2); fh.write('\n')
+" 2>/dev/null || {
+            # python 也失败就覆盖创建
+            cat > "$SETTINGS_FILE" << 'SETTINGSEOF'
+{
+  "env": {
+    "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS": "1"
+  }
+}
+SETTINGSEOF
+        }
     else
         cat > "$SETTINGS_FILE" << 'SETTINGSEOF'
 {
@@ -323,7 +293,7 @@ SETTINGSEOF
     success "系统设置：已配置"
 fi
 
-# --- 6b: Exa 搜索 ---
+# --- 5b: Exa 搜索 ---
 if command -v claude &> /dev/null; then
     if grep -q '"exa"' "$HOME/.claude.json" 2>/dev/null; then
         success "联网搜索：已配置（Exa）"
@@ -344,22 +314,25 @@ echo "  然后在 Claude Code 里说「帮我更换 Exa 的 API Key」"
 pause
 
 # ============================================================================
-step "7" "飞书集成（可选）"
+step "6" "飞书集成（可选）"
 # ============================================================================
 
 echo "  安装飞书 CLI 后，Claude Code 可以帮你："
 echo "  查日历、发消息、读文档、操作表格等。"
 echo ""
-echo "  这一步是可选的，以后也可以随时安装。"
+echo "  这一步是可选的，以后随时可以让 Claude Code 帮你安装。"
 echo ""
 
-ask "  现在安装吗？(y/n) [直接回车跳过]: " setup_lark
-setup_lark="${setup_lark:-n}"
+if ! command -v node &> /dev/null; then
+    # 没有 Node.js，飞书 CLI 装不了，直接提示以后再说
+    info "飞书集成需要 Node.js，当前未安装，先跳过"
+    echo "  以后想装的话，在 Claude Code 里说："
+    echo "  「帮我安装 Node.js 和飞书 CLI，参考 https://github.com/larksuite/cli/blob/main/README.zh.md」"
+else
+    ask "  现在安装吗？(y/n) [直接回车跳过]: " setup_lark
+    setup_lark="${setup_lark:-n}"
 
-if [[ "$setup_lark" == "y" || "$setup_lark" == "Y" ]]; then
-    if ! command -v npm &> /dev/null; then
-        error "需要先安装 Node.js 才能装飞书 CLI"
-    else
+    if [[ "$setup_lark" == "y" || "$setup_lark" == "Y" ]]; then
         info "正在安装（可能需要几分钟）..."
         npm install -g @larksuite/cli
 
@@ -377,13 +350,13 @@ if [[ "$setup_lark" == "y" || "$setup_lark" == "Y" ]]; then
             echo ""
             echo "  详细文档: https://github.com/larksuite/cli/blob/main/README.zh.md"
         else
-            error "安装失败，请稍后重试或在 Claude Code 中让它帮你安装"
+            error "安装失败，请稍后在 Claude Code 中让它帮你安装"
         fi
+    else
+        info "跳过飞书集成"
+        echo "  以后想装的话，在 Claude Code 里说："
+        echo "  「帮我安装飞书 CLI，参考 https://github.com/larksuite/cli/blob/main/README.zh.md」"
     fi
-else
-    info "跳过飞书集成"
-    echo "  以后想装的话，在 Claude Code 里说："
-    echo "  「帮我安装飞书 CLI，参考 https://github.com/larksuite/cli/blob/main/README.zh.md」"
 fi
 
 # ============================================================================
