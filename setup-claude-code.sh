@@ -26,8 +26,13 @@ step()    { echo -e "\n${BOLD}${CYAN}━━━ 第 $1 步：$2 ━━━${NC}\n"
 RELAY_URL="https://bmc-llm-relay.bluemediagroup.cn"
 
 # --- 兼容 curl | bash 模式：所有用户输入从终端读取 ---
-exec 3</dev/tty 2>/dev/null || exec 3<&0
-ask() { read -p "$1" "$2" <&3; }
+if [[ -t 0 ]]; then
+    # 直接运行脚本，stdin 就是终端
+    ask() { read -p "$1" "$2"; }
+else
+    # curl | bash 模式，stdin 被管道占用，强制从 /dev/tty 读
+    ask() { printf '%s' "$1" > /dev/tty; read "$2" < /dev/tty; }
+fi
 
 # --- 检测 shell 配置文件 ---
 if [[ "$SHELL" == *"zsh"* ]] || [[ -f "$HOME/.zshrc" ]]; then
