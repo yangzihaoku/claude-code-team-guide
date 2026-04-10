@@ -25,6 +25,10 @@ step()    { echo -e "\n${BOLD}${CYAN}━━━ 第 $1 步：$2 ━━━${NC}\n"
 # --- 公司 API 中转地址（所有人通用） ---
 RELAY_URL="https://bmc-llm-relay.bluemediagroup.cn"
 
+# --- 兼容 curl | bash 模式：所有用户输入从终端读取 ---
+exec 3</dev/tty 2>/dev/null || exec 3<&0
+ask() { read -p "$1" "$2" <&3; }
+
 # --- 检测 shell 配置文件 ---
 if [[ "$SHELL" == *"zsh"* ]] || [[ -f "$HOME/.zshrc" ]]; then
     SHELL_RC="$HOME/.zshrc"
@@ -56,7 +60,7 @@ echo "  其他:    确保终端（Terminal）的流量也走代理"
 echo ""
 echo -e "  ${YELLOW}原因：普通的「系统代理」只对浏览器生效，终端不走代理。${NC}"
 echo ""
-read -p "已确认 VPN 已正确配置？(回车继续) " _dummy
+ask "已确认 VPN 已正确配置？(回车继续) " _dummy
 
 # 测试连通性
 info "正在测试网络连通性..."
@@ -76,7 +80,7 @@ else
     echo "    export https_proxy=http://127.0.0.1:7890"
     echo "    export http_proxy=http://127.0.0.1:7890"
     echo ""
-    read -p "修复后按回车重试，或输入 skip 跳过检查: " choice
+    ask "修复后按回车重试，或输入 skip 跳过检查: " choice
     if [[ "$choice" != "skip" ]]; then
         if ! curl -s --connect-timeout 10 --max-time 15 "https://claude.ai" > /dev/null 2>&1; then
             error "仍然无法连接。请检查 VPN 配置后重新运行此脚本。"
@@ -101,7 +105,7 @@ else
     echo ""
 
     if command -v brew &> /dev/null; then
-        read -p "是否通过 Homebrew 安装 Node.js？(y/n) " install_node
+        ask "是否通过 Homebrew 安装 Node.js？(y/n) " install_node
         if [[ "$install_node" == "y" || "$install_node" == "Y" ]]; then
             info "正在安装 Node.js..."
             brew install node
@@ -117,7 +121,7 @@ else
         echo "  方式 2 - 直接下载安装："
         echo "    https://nodejs.org/zh-cn （选择 LTS 版本）"
         echo ""
-        read -p "安装好 Node.js 后按回车继续，或输入 skip 跳过: " choice
+        ask "安装好 Node.js 后按回车继续，或输入 skip 跳过: " choice
         if [[ "$choice" != "skip" ]]; then
             if ! command -v node &> /dev/null; then
                 error "仍未检测到 Node.js，MCP 工具将无法使用。"
@@ -135,7 +139,7 @@ DEFAULT_WORKSPACE="$HOME/claudeworkspace"
 echo "  Claude Code 需要一个本地目录作为工作空间。"
 echo "  建议使用一个专门的目录，而不是在桌面或根目录使用。"
 echo ""
-read -p "工作目录路径 [默认: $DEFAULT_WORKSPACE]: " WORKSPACE
+ask "工作目录路径 [默认: $DEFAULT_WORKSPACE]: " WORKSPACE
 WORKSPACE="${WORKSPACE:-$DEFAULT_WORKSPACE}"
 
 if [[ -d "$WORKSPACE" ]]; then
@@ -152,7 +156,7 @@ step "3" "安装 Claude Code"
 if command -v claude &> /dev/null; then
     CLAUDE_VERSION=$(claude --version 2>/dev/null || echo "未知版本")
     success "Claude Code 已安装: $CLAUDE_VERSION"
-    read -p "是否重新安装/更新？(y/n) [n]: " reinstall
+    ask "是否重新安装/更新？(y/n) [n]: " reinstall
     reinstall="${reinstall:-n}"
 else
     reinstall="y"
@@ -199,7 +203,7 @@ if grep -q "ANTHROPIC_API_KEY" "$SHELL_RC" 2>/dev/null; then
     if [[ -n "$EXISTING_KEY" ]]; then
         MASKED_KEY="${EXISTING_KEY:0:8}...${EXISTING_KEY: -4}"
         warn "检测到已有配置: $MASKED_KEY"
-        read -p "是否重新配置？(y/n) [n]: " reconfig
+        ask "是否重新配置？(y/n) [n]: " reconfig
         reconfig="${reconfig:-n}"
     fi
 fi
@@ -207,7 +211,7 @@ fi
 if [[ -z "$EXISTING_KEY" || "$reconfig" == "y" || "$reconfig" == "Y" ]]; then
     while true; do
         echo ""
-        read -p "请粘贴你的 API Key (以 sk- 开头): " API_KEY
+        ask "请粘贴你的 API Key (以 sk- 开头): " API_KEY
         if [[ "$API_KEY" == sk-* ]] && [[ ${#API_KEY} -gt 10 ]]; then
             break
         else
@@ -340,7 +344,7 @@ echo "  安装 Lark CLI 后，Claude Code 可以直接操作飞书："
 echo "  查日历、发消息、读文档、操作表格等。"
 echo ""
 
-read -p "是否现在安装 Lark CLI？(y/n) [跳过按回车]: " setup_lark
+ask "是否现在安装 Lark CLI？(y/n) [跳过按回车]: " setup_lark
 setup_lark="${setup_lark:-n}"
 
 if [[ "$setup_lark" == "y" || "$setup_lark" == "Y" ]]; then
