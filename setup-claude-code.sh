@@ -305,35 +305,29 @@ step "6" "配置联网搜索"
 # ============================================================================
 
 echo "  Claude Code 默认不能联网搜索（公司 API 不支持内置搜索功能）。"
-echo "  现在为你配置 DuckDuckGo 搜索（免费、无需注册）。"
+echo "  现在为你配置 Exa 搜索（AI 语义搜索，团队共享额度）。"
 echo ""
 
-if command -v npx &> /dev/null; then
-    if command -v claude &> /dev/null; then
-        # 检查是否已配置
-        if grep -q "ddg-search" "$HOME/.claude.json" 2>/dev/null; then
-            success "DuckDuckGo 搜索已配置，跳过"
-        else
-            info "正在配置 DuckDuckGo 搜索..."
-            claude mcp add ddg-search -s user -- npx -y duckduckgo-mcp-server 2>/dev/null && \
-                success "DuckDuckGo 搜索配置完成（免费、无限次数）" || \
-                warn "自动配置未成功，你可以稍后在 Claude Code 中让它帮你配置"
-        fi
+if command -v claude &> /dev/null; then
+    # 检查是否已配置
+    if grep -q '"exa"' "$HOME/.claude.json" 2>/dev/null; then
+        success "Exa 搜索已配置，跳过"
     else
-        warn "Claude Code 未就绪，跳过搜索配置"
-        echo "  稍后在 Claude Code 中输入以下内容让它帮你配置："
-        echo "  「帮我配置 DuckDuckGo 搜索 MCP」"
+        info "正在配置 Exa 搜索..."
+        claude mcp add --transport http exa -s user "https://mcp.exa.ai/mcp?exaApiKey=ff847a3e-e7bb-46b3-b763-23f3120bc6e2" 2>/dev/null && \
+            success "Exa 搜索配置完成" || \
+            warn "自动配置未成功，你可以稍后在 Claude Code 中让它帮你配置"
     fi
 
     echo ""
-    echo -e "  ${CYAN}想要更好的搜索质量？可以额外注册以下服务（都有免费额度）：${NC}"
-    echo "  - Brave Search: https://brave.com/search/api/   （1000 次/月）"
-    echo "  - Tavily:       https://tavily.com/              （1000 次/月，注册不需要信用卡）"
-    echo "  - Exa:          https://exa.ai/                  （1000 次/月，语义搜索最强）"
-    echo "  注册拿到 Key 后，直接在 Claude Code 里说「帮我配置 xxx 搜索」就行。"
+    info "关于搜索额度"
+    echo "  当前使用团队共享的 Exa API Key，有一定免费额度。"
+    echo "  如果提示额度不足，请自行注册获取个人 Key："
+    echo "  https://dashboard.exa.ai/api-keys"
+    echo "  拿到 Key 后在 Claude Code 里说「帮我更换 Exa 的 API Key」即可。"
 else
-    warn "Node.js 未安装，跳过搜索配置"
-    echo "  安装 Node.js 后，在 Claude Code 中让它帮你配置搜索功能。"
+    warn "Claude Code 未就绪，跳过搜索配置"
+    echo "  稍后在 Claude Code 中说「帮我配置 Exa 搜索 MCP」即可。"
 fi
 
 # ============================================================================
