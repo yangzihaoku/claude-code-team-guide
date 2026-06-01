@@ -30,7 +30,9 @@ function Pause-Step {
 }
 
 $TOTAL_STEPS = 6
-$RELAY_URL = "https://bmc-llm-relay.bluemediagroup.cn"
+$URL_CN = "https://bmc-llm-relay.bluemediagroup.cn"
+$URL_OVERSEAS = "https://bmc-llm-relay.nextblue.ai"
+$RELAY_URL = $URL_CN   # 默认国内，Select-Region 会按需改为海外
 
 # --- 配置 / 更换 API Key（完整安装和「仅更换 Key」模式共用） ---
 function Set-ApiKey {
@@ -78,11 +80,29 @@ function Set-ApiKey {
         Success "API Key 和中转地址已保存到用户环境变量"
     } else {
         $env:ANTHROPIC_AUTH_TOKEN = $existingKey
-        $existingUrl = [System.Environment]::GetEnvironmentVariable("ANTHROPIC_BASE_URL", "User")
-        if (-not $existingUrl) {
-            [System.Environment]::SetEnvironmentVariable("ANTHROPIC_BASE_URL", $RELAY_URL, "User")
-        }
+        [System.Environment]::SetEnvironmentVariable("ANTHROPIC_BASE_URL", $RELAY_URL, "User")
         $env:ANTHROPIC_BASE_URL = $RELAY_URL
+    }
+}
+
+# --- 选择 API 节点（国内 / 海外），设置 $script:RELAY_URL ---
+function Select-Region {
+    # 默认沿用已配置的节点
+    $current = [System.Environment]::GetEnvironmentVariable("ANTHROPIC_BASE_URL", "User")
+    $def = "1"
+    if ($current -like "*nextblue.ai*") { $def = "2" }
+    Write-Host ""
+    Write-Host "  你常驻哪个区域？(决定使用哪个 API 节点)"
+    Write-Host "    1) 国内"
+    Write-Host "    2) 海外"
+    $r = Read-Host "  输入 1 或 2 [直接回车 = $def]"
+    if (-not $r) { $r = $def }
+    if ($r -eq "2") {
+        $script:RELAY_URL = $URL_OVERSEAS
+        Success "已选择海外节点：$($script:RELAY_URL)"
+    } else {
+        $script:RELAY_URL = $URL_CN
+        Success "已选择国内节点：$($script:RELAY_URL)"
     }
 }
 
@@ -122,6 +142,7 @@ if ($mode -eq "2") {
     Write-Host "  还没拿到新 Key？去这里申请：" -ForegroundColor Cyan
     Write-Host "  https://bluefocus.feishu.cn/docx/A8ozdc5HdoGgooxhTugcp7bHnae"
     Write-Host ""
+    Select-Region
     Set-ApiKey
     Write-Host ""
     Success "Key 已更换完成！"
@@ -298,6 +319,7 @@ Write-Host "  还没有 Key？去这里申请：" -ForegroundColor Cyan
 Write-Host "  https://bluefocus.feishu.cn/docx/A8ozdc5HdoGgooxhTugcp7bHnae"
 Write-Host ""
 
+Select-Region
 Set-ApiKey
 
 Pause-Step

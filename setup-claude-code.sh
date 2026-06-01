@@ -49,8 +49,10 @@ ensure_line() {
     fi
 }
 
-# --- 公司 API 中转地址（所有人通用） ---
-RELAY_URL="https://bmc-llm-relay.bluemediagroup.cn"
+# --- 公司 API 中转地址（国内 / 海外两个节点） ---
+URL_CN="https://bmc-llm-relay.bluemediagroup.cn"
+URL_OVERSEAS="https://bmc-llm-relay.nextblue.ai"
+RELAY_URL="$URL_CN"   # 默认国内，choose_region 会按需改为海外
 
 # --- 检测 shell 配置文件 ---
 if [[ "$SHELL" == *"zsh"* ]] || [[ -f "$HOME/.zshrc" ]]; then
@@ -121,8 +123,37 @@ EOF
         export ANTHROPIC_BASE_URL="$RELAY_URL"
     fi
 
-    # 确保 BASE_URL 也在配置中（可能之前只写了 KEY 没写 URL）
-    ensure_line 'ANTHROPIC_BASE_URL' "export ANTHROPIC_BASE_URL=\"$RELAY_URL\""
+    # 写入/更新 BASE_URL（区域可能变化，已有则覆盖旧值）
+    if grep -q "ANTHROPIC_BASE_URL" "$SHELL_RC" 2>/dev/null; then
+        sed -i '' "s|export ANTHROPIC_BASE_URL=.*|export ANTHROPIC_BASE_URL=\"$RELAY_URL\"|" "$SHELL_RC"
+    else
+        echo "export ANTHROPIC_BASE_URL=\"$RELAY_URL\"" >> "$SHELL_RC"
+    fi
+}
+
+# --- 选择 API 节点（国内 / 海外），设置 RELAY_URL ---
+choose_region() {
+    # 默认沿用已配置的节点
+    local current=""
+    if grep -q "ANTHROPIC_BASE_URL" "$SHELL_RC" 2>/dev/null; then
+        current=$(grep "ANTHROPIC_BASE_URL" "$SHELL_RC" | grep -o '"[^"]*"' | tail -1 | tr -d '"')
+    fi
+    local def=1
+    [[ "$current" == *"nextblue.ai"* ]] && def=2
+    echo ""
+    echo "  你常驻哪个区域？(决定使用哪个 API 节点)"
+    echo "    1) 国内"
+    echo "    2) 海外"
+    local r
+    ask "  输入 1 或 2 [直接回车 = $def]: " r
+    r="${r:-$def}"
+    if [[ "$r" == "2" ]]; then
+        RELAY_URL="$URL_OVERSEAS"
+        success "已选择海外节点：$RELAY_URL"
+    else
+        RELAY_URL="$URL_CN"
+        success "已选择国内节点：$RELAY_URL"
+    fi
 }
 
 # ============================================================================
@@ -162,6 +193,7 @@ if [[ "$MODE" == "2" ]]; then
     echo -e "  ${CYAN}还没拿到新 Key？去这里申请：${NC}"
     echo "  https://bluefocus.feishu.cn/docx/A8ozdc5HdoGgooxhTugcp7bHnae"
     echo ""
+    choose_region
     configure_api_key
     echo ""
     success "Key 已更换完成！"
@@ -286,6 +318,7 @@ echo -e "  ${CYAN}还没有 Key？去这里申请：${NC}"
 echo "  https://bluefocus.feishu.cn/docx/A8ozdc5HdoGgooxhTugcp7bHnae"
 echo ""
 
+choose_region
 configure_api_key
 
 # 添加快捷命令 cc
