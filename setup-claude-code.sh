@@ -59,6 +59,72 @@ else
     SHELL_RC="$HOME/.bashrc"
 fi
 
+# --- 配置 / 更换 API Key（完整安装和「仅更换 Key」模式共用） ---
+configure_api_key() {
+    # 清理旧版变量名（早期脚本用的是 ANTHROPIC_API_KEY，现已改为 ANTHROPIC_AUTH_TOKEN）
+    if grep -q "ANTHROPIC_API_KEY" "$SHELL_RC" 2>/dev/null; then
+        cp "$SHELL_RC" "${SHELL_RC}.bak.$(date +%Y%m%d%H%M%S)"
+        sed -i '' "/export ANTHROPIC_API_KEY=/d" "$SHELL_RC"
+        unset ANTHROPIC_API_KEY
+        warn "检测到旧版 ANTHROPIC_API_KEY，已清除（新版改用 ANTHROPIC_AUTH_TOKEN）"
+    fi
+
+    # 检查是否已配置
+    local EXISTING_KEY=""
+    if grep -q "ANTHROPIC_AUTH_TOKEN" "$SHELL_RC" 2>/dev/null; then
+        EXISTING_KEY=$(grep "ANTHROPIC_AUTH_TOKEN" "$SHELL_RC" | grep -o '"[^"]*"' | tail -1 | tr -d '"')
+    fi
+
+    local reconfig="n"
+    if [[ -n "$EXISTING_KEY" ]]; then
+        local MASKED="${EXISTING_KEY:0:8}...${EXISTING_KEY: -4}"
+        success "检测到已有 API Key: $MASKED"
+        echo ""
+        ask "  是否更换？(y/n) [直接回车保留现有]: " reconfig
+        reconfig="${reconfig:-n}"
+    fi
+
+    if [[ -z "$EXISTING_KEY" || "$reconfig" == "y" || "$reconfig" == "Y" ]]; then
+        echo ""
+        echo -e "  ${BOLD}请粘贴你的 API Key（以 blueai- 开头）：${NC}"
+        echo ""
+        local API_KEY
+        while true; do
+            ask "  API Key: " API_KEY
+            if [[ "$API_KEY" == blueai-* ]] && [[ ${#API_KEY} -gt 10 ]]; then
+                break
+            else
+                echo ""
+                error "格式不对，API Key 应该以 blueai- 开头，请重新粘贴"
+                echo ""
+            fi
+        done
+
+        # 安全写入：已有 AUTH_TOKEN 行则原地替换，否则首次追加
+        if grep -q "ANTHROPIC_AUTH_TOKEN" "$SHELL_RC" 2>/dev/null; then
+            cp "$SHELL_RC" "${SHELL_RC}.bak.$(date +%Y%m%d%H%M%S)"
+            sed -i '' "s|export ANTHROPIC_AUTH_TOKEN=.*|export ANTHROPIC_AUTH_TOKEN=\"$API_KEY\"|" "$SHELL_RC"
+            success "API Key 已更新"
+        else
+            cat >> "$SHELL_RC" << EOF
+
+# Claude Code API Configuration
+export ANTHROPIC_AUTH_TOKEN="$API_KEY"
+EOF
+            success "API Key 已保存"
+        fi
+
+        export ANTHROPIC_AUTH_TOKEN="$API_KEY"
+        export ANTHROPIC_BASE_URL="$RELAY_URL"
+    else
+        export ANTHROPIC_AUTH_TOKEN="$EXISTING_KEY"
+        export ANTHROPIC_BASE_URL="$RELAY_URL"
+    fi
+
+    # 确保 BASE_URL 也在配置中（可能之前只写了 KEY 没写 URL）
+    ensure_line 'ANTHROPIC_BASE_URL' "export ANTHROPIC_BASE_URL=\"$RELAY_URL\""
+}
+
 # ============================================================================
 clear 2>/dev/null || true
 echo ""
@@ -75,6 +141,37 @@ echo "  整个过程大约需要 5 分钟，请跟着提示操作。"
 echo ""
 echo -e "  ${DIM}已经安装过？没关系，脚本会自动跳过已完成的步骤。${NC}"
 echo ""
+echo "  请选择要做什么："
+echo ""
+echo "    1) 完整安装 / 检查（首次使用，推荐）"
+echo "    2) 仅更换 API Key（已经装过，公司换了新 key）"
+echo ""
+ask "  输入 1 或 2 [直接回车 = 1]: " MODE
+MODE="${MODE:-1}"
+
+# --- 模式 2：仅更换 API Key，跳过其余所有步骤 ---
+if [[ "$MODE" == "2" ]]; then
+    echo ""
+    echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${BOLD}${CYAN}  更换 API Key${NC}"
+    echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    echo "  公司轮换了 API Key（新 key 以 blueai- 开头）。"
+    echo "  把新 key 粘进来即可，旧的会自动清理。"
+    echo ""
+    echo -e "  ${CYAN}还没拿到新 Key？去这里申请：${NC}"
+    echo "  https://bluefocus.feishu.cn/docx/A8ozdc5HdoGgooxhTugcp7bHnae"
+    echo ""
+    configure_api_key
+    echo ""
+    success "Key 已更换完成！"
+    echo ""
+    warn "请关闭当前终端窗口、重新打开一个，新 key 才会生效。"
+    echo -e "  ${DIM}（或在当前窗口运行: source $SHELL_RC）${NC}"
+    echo ""
+    exit 0
+fi
+
 ask "  准备好了吗？按回车开始 → " _dummy
 
 # ============================================================================
@@ -189,63 +286,7 @@ echo -e "  ${CYAN}还没有 Key？去这里申请：${NC}"
 echo "  https://bluefocus.feishu.cn/docx/A8ozdc5HdoGgooxhTugcp7bHnae"
 echo ""
 
-# 检查是否已配置
-EXISTING_KEY=""
-if grep -q "ANTHROPIC_API_KEY" "$SHELL_RC" 2>/dev/null; then
-    EXISTING_KEY=$(grep "ANTHROPIC_API_KEY" "$SHELL_RC" | grep -o '"[^"]*"' | tail -1 | tr -d '"')
-fi
-
-if [[ -n "$EXISTING_KEY" ]]; then
-    MASKED="${EXISTING_KEY:0:8}...${EXISTING_KEY: -4}"
-    success "检测到已有 API Key: $MASKED"
-    echo ""
-    ask "  是否更换？(y/n) [直接回车保留现有]: " reconfig
-    reconfig="${reconfig:-n}"
-fi
-
-if [[ -z "$EXISTING_KEY" || "$reconfig" == "y" || "$reconfig" == "Y" ]]; then
-    echo ""
-    echo -e "  ${BOLD}请粘贴你的 API Key（以 sk- 开头）：${NC}"
-    echo ""
-    while true; do
-        ask "  API Key: " API_KEY
-        if [[ "$API_KEY" == sk-* ]] && [[ ${#API_KEY} -gt 10 ]]; then
-            break
-        else
-            echo ""
-            error "格式不对，API Key 应该以 sk- 开头，请重新粘贴"
-            echo ""
-        fi
-    done
-
-    # 安全写入：用 grep 逐行检查，不用 sed 删除
-    # 如果已有旧的 KEY 行，用 sed 原地替换（只替换那一行）
-    if grep -q "ANTHROPIC_API_KEY" "$SHELL_RC" 2>/dev/null; then
-        # 备份
-        cp "$SHELL_RC" "${SHELL_RC}.bak.$(date +%Y%m%d%H%M%S)"
-        # 只替换包含 ANTHROPIC_API_KEY 的那一行
-        sed -i '' "s|export ANTHROPIC_API_KEY=.*|export ANTHROPIC_API_KEY=\"$API_KEY\"|" "$SHELL_RC"
-        success "API Key 已更新"
-    else
-        # 首次写入
-        cat >> "$SHELL_RC" << EOF
-
-# Claude Code API Configuration
-export ANTHROPIC_API_KEY="$API_KEY"
-export ANTHROPIC_BASE_URL="$RELAY_URL"
-EOF
-        success "API Key 已保存"
-    fi
-
-    export ANTHROPIC_API_KEY="$API_KEY"
-    export ANTHROPIC_BASE_URL="$RELAY_URL"
-else
-    export ANTHROPIC_API_KEY="$EXISTING_KEY"
-    export ANTHROPIC_BASE_URL="$RELAY_URL"
-fi
-
-# 确保 BASE_URL 也在配置中（可能之前只写了 KEY 没写 URL）
-ensure_line 'ANTHROPIC_BASE_URL' "export ANTHROPIC_BASE_URL=\"$RELAY_URL\""
+configure_api_key
 
 # 添加快捷命令 cc
 if ! grep -q "alias cc=" "$SHELL_RC" 2>/dev/null; then
